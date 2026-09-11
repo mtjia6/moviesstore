@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Movie, Review
+from .models import Movie, Review, Report
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 
+REPORT_THRESHOLD = 1
 
 def index(request):
     search_term = request.GET.get('search')
@@ -18,7 +20,7 @@ def index(request):
 
 def show(request, id):
     movie = Movie.objects.get(id=id)
-    reviews = Review.objects.filter(movie=movie)
+    reviews = (Review.objects.filter(movie=movie).annotate(num_reports=Count('report')).filter(num_reports__lt=REPORT_THRESHOLD))
     template_data = {}
     template_data['title'] = movie.name
     template_data['movie'] = movie
@@ -63,6 +65,13 @@ def delete_review(request, id, review_id):
     review = get_object_or_404(Review, id=review_id, user=request.user)
     review.delete()
     return redirect('movies.show', id=id)
+
+@login_required
+def report_review(request, id, review_id):
+    review = get_object_or_404(Review, id=review_id, movie_id=id)
+    if request.method == 'POST' and review.user != request.user:
+        Report.objects.get_or_create(review=review, user=request.user)
+    return redirect ('movies.show', id=id)
 
 
 

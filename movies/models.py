@@ -21,3 +21,15 @@ class Review(models.Model):
 
     def __str__(self):
         return str(self.id) + ' - ' + self.movie.name
+
+class Report(models.Model):
+    id = models.AutoField(primary_key=True)
+    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('review', 'user')
+
+    def __str__(self):
+        return str(self.id) + ' - report on review ' + str(self.review.id) 
